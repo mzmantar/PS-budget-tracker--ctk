@@ -1,15 +1,8 @@
+import conn
 class UserManager:
     def __init__(self, connection):
-        self.__connection = connection
+        self.connection = connection
         
-    @property
-    def connection(self):
-        return self.__connection
-
-    @connection.setter
-    def connection(self, connection):
-        self.__connection = connection
-
     def register_user(self, firstname, lastname, username, email, password):
         with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s OR email = %s", (username, email))
@@ -75,65 +68,26 @@ class UserManager:
 
 class User:
     def __init__(self, firstname, lastname, username, password, email, connection):
-        self.__firstname = firstname
-        self.__lastname = lastname
-        self.__username = username
-        self.__password = password
-        self.__email = email
-        self.__connection = connection
-    
-    @property
-    def firstname(self):
-        return self.__firstname
-    
-    @firstname.setter
-    def firstname(self, firstname):
-        self.__firstname = firstname
-    
-    @property
-    def lastname(self):
-        return self.__lastname
-    
-    @lastname.setter
-    def lastname(self, lastname):
-        self.__lastname = lastname
-        
-    @property
-    def username(self):
-        return self.__username
-    
-    @username.setter
-    def username(self, username):
-        self.__username = username
-    
-    @property
-    def password(self):
-        return self.__password
-    
-    @password.setter
-    def password(self, password):
-        self.__password = password
-    
-    @property
-    def email(self):
-        return self.__email
-    
-    @email.setter
-    def email(self, email):
-        self.__email = email
+        self.firstname = firstname
+        self.lastname = lastname
+        self.username = username
+        self.password = password
+        self.email = email
+        self.connection = connection
+ 
     
     def add_budget(self, username, category, amount_B):
         if amount_B <= 0:
             print("Le budget doit être supérieur à zéro.")
             return
     
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
         
             if existing_user:
                 cursor.execute("INSERT INTO budget (user_id, category, amount) VALUES (%s, %s, %s)", (existing_user['user_id'], category, amount_B))
-                self.__connection.commit()
+                self.connection.commit()
                 print("Budget ajouté avec succès.")
             else:
                 print("Utilisateur inexistant.")
@@ -144,7 +98,7 @@ class User:
             print("Le montant de la transaction doit être supérieur à zéro.")
             return
 
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
 
@@ -166,12 +120,12 @@ class User:
                 return
 
             cursor.execute("INSERT INTO transaction (user_id, description, amount, category) VALUES (%s, %s, %s, %s)", (existing_user['user_id'], description, amount_T, category))
-            self.__connection.commit()
+            self.connection.commit()
 
             print("Transaction ajoutée avec succès.")
     
     def update_budget(self, username, category, new_amount):
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
 
@@ -180,11 +134,11 @@ class User:
                 return
 
             cursor.execute("UPDATE budget SET amount = %s WHERE user_id = %s AND category = %s", (new_amount, existing_user['user_id'], category))
-            self.__connection.commit()
+            self.connection.commit()
             print("Budget mis à jour avec succès.")
 
     def delete_budget(self, username, category):
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
 
@@ -193,11 +147,11 @@ class User:
                 return
 
             cursor.execute("DELETE FROM budget WHERE user_id = %s AND category = %s", (existing_user['user_id'], category))
-            self.__connection.commit()
+            self.connection.commit()
             print("Budget supprimé avec succès.")
 
     def update_transaction(self, username, transaction_id, new_description, new_amount):
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
 
@@ -206,11 +160,11 @@ class User:
                 return
 
             cursor.execute("UPDATE transaction SET description = %s, amount = %s WHERE user_id = %s AND transaction_id = %s", (new_description, new_amount, existing_user['user_id'], transaction_id))
-            self.__connection.commit()
+            self.connection.commit()
             print("Transaction mise à jour avec succès.")
 
     def delete_transaction(self, username, transaction_id):
-        with self.__connection.cursor() as cursor:
+        with self.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
 
@@ -219,11 +173,11 @@ class User:
                 return
 
             cursor.execute("DELETE FROM transaction WHERE user_id = %s AND transaction_id = %s", (existing_user['user_id'], transaction_id))
-            self.__connection.commit()
+            self.connection.commit()
             print("Transaction supprimée avec succès.")
     
-    def tax_calculation(self, username, amount_B, category):
-        with self.__connection.cursor() as cursor:
+    def tax_calculation(self, username, amount_B,amount_T, category):
+        with self.connection.cursor() as cursor:
         
             cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
             existing_user = cursor.fetchone()
@@ -241,7 +195,7 @@ class User:
                 return
 
     
-            revenu_annuel = budget['amount_B'] * 12
+            revenu_annuel = ( budget['amount_B'] + Transaction['amount_T'] ) * 12
     
             tranches = [(0, 0, 0.0), (3000, 0, 0.08), (5000, 120, 0.22), (10000, 620, 0.32), (20000, 1620, 0.37), (35000, 3620, 0.45)]
 
@@ -255,8 +209,6 @@ class User:
                     impot += (tranches[i][0] - tranches[i][1]) * tranches[i][2]
 
             return impot
-        
-        
 
 class Budget:
     def __init__(self, category, amount_T):
@@ -268,29 +220,4 @@ class Transaction:
         self.description = description
         self.amount_B = amount_B
         self.category = category
-        
-
-    @property
-    def description(self):
-        return self.__description
-    
-    @description.setter
-    def description(self, description):
-        self.__description = description
-    
-    @property
-    def amount_B(self):
-        return self.__amount_B
-    
-    @amount_B.setter
-    def amount_B(self, amount_B):
-        self.__amount_B = amount_B
-    
-    @property
-    def category(self):
-        return self.__category
-    
-    @category.setter
-    def category(self, category):
-        self.__category = category
     
