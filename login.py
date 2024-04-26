@@ -1,17 +1,20 @@
 import re
 import customtkinter as ctk
+import customtkinter
 from main import UserManager
-from conn import *
 
 def login():
     username = username_entry.get()
     password = password_entry.get()
     
-    user_manager = UserManager(CONNEXION)
+    user_manager = UserManager()
     user = user_manager.login_user(username, password)
     
     if user:
         print("Connexion réussie.")
+        import dashboard
+        button.destroy()
+        dashboard.show_login()
     else:
         print("Nom d'utilisateur ou mot de passe invalide.")
 
@@ -38,7 +41,7 @@ def register():
     password = registration_pass_entry.get()
 
     if validate_registration(first_name, last_name, email, username, password):
-        user_manager = UserManager(CONNEXION)
+        user_manager = UserManager()
         user_registration = user_manager.register_user(first_name, last_name, username, email, password)
         if user_registration:
             print("Inscription réussie.")
@@ -50,6 +53,8 @@ def open_registration_page():
     registration_app = ctk.CTk()
     registration_app.geometry("600x560")
     registration_app.title("Page d'Inscription - BUDGET-TRACKER")
+    registration_app.iconbitmap("logo/badgettraker.ico")
+    
     
     label = ctk.CTkLabel(registration_app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
     label.pack(pady=10)
@@ -91,10 +96,10 @@ def forgot_password():
     password_app = ctk.CTk()
     password_app.geometry("600x470")
     password_app.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
-    
+    password_app.iconbitmap("logo/badgettraker.ico")
     label = ctk.CTkLabel(master=password_app,font=("", 20,'bold'),text='---BUDGET-TRACKER---')
     label.pack(pady=12, padx=50, fill='both')
-    
+        
     frame = ctk.CTkFrame(master=password_app)
     frame.pack(pady=30, padx=40, fill='both', expand=True)
     
@@ -122,18 +127,20 @@ def forgot_password():
     password_app.mainloop()
 
 
+customtkinter.set_appearance_mode("light")
+
 def toggle_dark_mode():
-    val=dark_mode_button.get()
-    if val:
-        ctk.set_appearance_mode("light")
-    else:
+    if dark_mode_button.get():
         ctk.set_appearance_mode("dark")
+    else:
+        ctk.set_appearance_mode("light")
         
     
     
 app = ctk.CTk()
 app.geometry("800x600")
 app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
+app.iconbitmap("logo/badgettraker.ico")
 
 label = ctk.CTkLabel(app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
 label.pack(pady=10)
