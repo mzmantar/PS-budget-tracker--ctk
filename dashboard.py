@@ -14,16 +14,13 @@ def destroy_window():
     import login
     login.show_login()
 
-
 dashbord_BT = ctk.CTk()
 dashbord_BT.geometry("1200x700")
 dashbord_BT.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
-dashbord_BT.iconbitmap("logo/badgettraker.ico")
-
+# dashbord_BT.iconbitmap("logo/badgettraker.ico")
 
 Dec_button = ctk.CTkButton(master=dashbord_BT, text='DECONNEXION', command=destroy_window)
 Dec_button.pack(side='top', anchor='ne', padx=20, pady=20)
-
 
 label = ctk.CTkLabel(master=dashbord_BT, font=("", 20, 'bold'), text='---BUDGET-TRACKER---')
 label.pack(pady=2, padx=10, fill='both')
@@ -31,15 +28,11 @@ label.pack(pady=2, padx=10, fill='both')
 frame2 = ctk.CTkFrame(master=dashbord_BT)
 frame2.pack(side='right', pady=200, padx=15, fill='both')
 
-
 frame1 = ctk.CTkFrame(master=dashbord_BT)
 frame1.pack(side='left', pady=200, padx=15, fill='both')
 
-
-
 frame = ctk.CTkFrame(master=dashbord_BT)
 frame.pack(pady=100, padx=5, fill='both', expand=True)
-
 
 dark_mode_button = ctk.CTkSwitch(dashbord_BT, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', command=toggle_dark_mode)
 dark_mode_button.pack(pady=10)

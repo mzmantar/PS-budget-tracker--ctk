@@ -1,7 +1,11 @@
 import re
 import customtkinter as ctk
 import customtkinter
+
 from main import UserManager
+from conn import CONNEXION
+
+customtkinter.set_appearance_mode("light")
 
 def login():
     username = username_entry.get()
@@ -13,7 +17,7 @@ def login():
     if user:
         print("Connexion réussie.")
         import dashboard
-        button.destroy()
+        app.destroy()
         dashboard.show_login()
     else:
         print("Nom d'utilisateur ou mot de passe invalide.")
@@ -41,20 +45,19 @@ def register():
     password = registration_pass_entry.get()
 
     if validate_registration(first_name, last_name, email, username, password):
-        user_manager = UserManager()
+        user_manager = UserManager(CONNEXION)
         user_registration = user_manager.register_user(first_name, last_name, username, email, password)
         if user_registration:
-            print("Inscription réussie.")
+            registration_app.destroy()
         else:
             print("L'utilisateur existe déjà ou l'inscription a échoué.")
 
 def open_registration_page():
-    global first_name_entry, last_name_entry, email_entry, registration_user_entry, registration_pass_entry
+    global registration_app, first_name_entry, last_name_entry, email_entry, registration_user_entry, registration_pass_entry
+    
     registration_app = ctk.CTk()
     registration_app.geometry("600x560")
     registration_app.title("Page d'Inscription - BUDGET-TRACKER")
-    registration_app.iconbitmap("logo/badgettraker.ico")
-    
     
     label = ctk.CTkLabel(registration_app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
     label.pack(pady=10)
@@ -89,14 +92,12 @@ def open_registration_page():
     Budjet_traker = ctk.CTkLabel(registration_app,font=("", 10), text="© Budjet-traker 2024-2025 Conception et realisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits reserves.")
     Budjet_traker.pack(pady=10)
     
-
     registration_app.mainloop()
 
 def forgot_password():
     password_app = ctk.CTk()
     password_app.geometry("600x470")
     password_app.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
-    password_app.iconbitmap("logo/badgettraker.ico")
     label = ctk.CTkLabel(master=password_app,font=("", 20,'bold'),text='---BUDGET-TRACKER---')
     label.pack(pady=12, padx=50, fill='both')
         
@@ -126,21 +127,16 @@ def forgot_password():
     
     password_app.mainloop()
 
-
-customtkinter.set_appearance_mode("light")
-
 def toggle_dark_mode():
     if dark_mode_button.get():
         ctk.set_appearance_mode("dark")
     else:
         ctk.set_appearance_mode("light")
-        
-    
-    
+
 app = ctk.CTk()
 app.geometry("800x600")
 app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
-app.iconbitmap("logo/badgettraker.ico")
+# app.iconbitmap("logo/badgettraker.ico")
 
 label = ctk.CTkLabel(app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
 label.pack(pady=10)
@@ -171,14 +167,10 @@ forgot_password_label = ctk.CTkLabel(app, text="Mot de passe oublié ?", cursor=
 forgot_password_label.pack(pady=10)
 forgot_password_label.bind("<Button-1>", lambda e: forgot_password())
 
-
-
 dark_mode_button = ctk.CTkSwitch(app,onvalue=1,offvalue=0, text='Activer le mode dark ou light' ,command=toggle_dark_mode)
 dark_mode_button.pack(pady=10)
-print(dark_mode_button.get())
 
 Budjet_traker = ctk.CTkLabel(app,font=("", 10), text="© Budjet-traker 2024-2025 Conception et realisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits reserves.")
 Budjet_traker.pack(pady=10)
-
 
 app.mainloop()

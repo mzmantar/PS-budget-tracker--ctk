@@ -74,7 +74,7 @@ class User:
         self.password = password
         self.email = email
         self.connection = connection
- 
+
     
     def add_budget(self, username, category, amount_B):
         if amount_B <= 0:
