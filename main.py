@@ -22,7 +22,9 @@ class UserManager:
             user_data = cursor.fetchone()
             if user_data:
                 print("Connexion réussie.")
-                return User(user_data['firstname'], user_data['lastname'], username, password, user_data['email'], self.connection)
+                #user_data output example
+                #(4, 'Jassem', 'boughattas', 'macfim', 'boughattasjassem@outlook.com', 'Jassem123', datetime.datetime(2024, 4, 27, 23, 23, 59))
+                return User(user_data[1], user_data[2], username, password, user_data[4], self.connection)
             else:
                 print("Nom d'utilisateur ou mot de passe incorrect.")
                 return None
@@ -75,7 +77,6 @@ class User:
         self.email = email
         self.connection = connection
 
-    
     def add_budget(self, username, category, amount_B):
         if amount_B <= 0:
             print("Le budget doit être supérieur à zéro.")
@@ -220,4 +221,3 @@ class Transaction:
         self.description = description
         self.amount_B = amount_B
         self.category = category
-    

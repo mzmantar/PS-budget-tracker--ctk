@@ -11,14 +11,13 @@ def login():
     username = username_entry.get()
     password = password_entry.get()
     
-    user_manager = UserManager()
+    user_manager = UserManager(CONNEXION)
     user = user_manager.login_user(username, password)
     
     if user:
         print("Connexion réussie.")
-        import dashboard
         app.destroy()
-        dashboard.show_login()
+        import dashboard
     else:
         print("Nom d'utilisateur ou mot de passe invalide.")
 
@@ -133,6 +132,7 @@ def toggle_dark_mode():
     else:
         ctk.set_appearance_mode("light")
 
+global app
 app = ctk.CTk()
 app.geometry("800x600")
 app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
