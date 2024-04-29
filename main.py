@@ -1,4 +1,4 @@
-import conn
+import Connexion
 class UserManager:
     def __init__(self, connection):
         self.connection = connection
@@ -22,23 +22,36 @@ class UserManager:
             user_data = cursor.fetchone()
             if user_data:
                 print("Connexion réussie.")
-                return User(user_data['firstname'], user_data['lastname'], username, password, user_data['email'], self.connection)
+                return User(user_data[1], user_data[2], username, password, user_data[4], self.connection)
             else:
                 print("Nom d'utilisateur ou mot de passe incorrect.")
                 return None
     
-    def update_user(self, username, new_firstname, new_lastname, new_username, new_email, new_password):
+    def update_user(self, username,old_password, new_firstname, new_lastname, new_email, new_password):
         with self.connection.cursor() as cursor:
-            cursor.execute("UPDATE user SET firstname=%s, lastname=%s, username=%s, email=%s, password=%s WHERE username=%s", (new_firstname, new_lastname, new_username, new_email, new_password, username))
-            self.connection.commit()
-            print("Informations utilisateur mises à jour.")
+            cursor.execute("UPDATE user SET firstname=%s, lastname=%s, email=%s, password=%s WHERE username=%s and password=%s", 
+                           (new_firstname, new_lastname, new_email, new_password, username, old_password))
+            if cursor.rowcount > 0:
+                self.connection.commit()
+                print("Informations utilisateur mises à jour.")
+            else:
+                print("Aucun utilisateur trouvé avec ce nom d'utilisateur et mot de passe.")
 
     def delete_account(self, username):
         with self.connection.cursor() as cursor:
             cursor.execute("DELETE FROM user WHERE username=%s", (username,))
             self.connection.commit()
             print("Compte utilisateur supprimé.")
-
+    
+    def get_password(self,username,email):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT password FROM user WHERE username = %s OR email = %s", (username, email))
+            existing_password = cursor.fetchone()
+            if existing_password:
+                return existing_password[0]
+            else:
+                return None
+        
     def display_user_budgets(self, username):
         with self.connection.cursor() as cursor:
             cursor.execute("SELECT budget.category, budget.amount FROM budget INNER JOIN user ON budget.user_id = user.user_id WHERE user.username = %s", (username,))
@@ -50,6 +63,15 @@ class UserManager:
                     print("Montant:", budget['amount'])
             else:
                 print("Aucun budget trouvé pour l'utilisateur", username)
+    def get_firstname_lastname(self, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT firstname, lastname FROM user WHERE username = %s", (username,))
+            row = cursor.fetchone()
+            if row:
+                firstname, lastname = row  
+                return f"{firstname} {lastname}"
+            else:
+                return None
 
     def display_user_transactions(self, username):
         with self.connection.cursor() as cursor:
@@ -74,8 +96,7 @@ class User:
         self.password = password
         self.email = email
         self.connection = connection
- 
-    
+
     def add_budget(self, username, category, amount_B):
         if amount_B <= 0:
             print("Le budget doit être supérieur à zéro.")
@@ -220,4 +241,3 @@ class Transaction:
         self.description = description
         self.amount_B = amount_B
         self.category = category
-    

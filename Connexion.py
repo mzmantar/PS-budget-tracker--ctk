@@ -12,4 +12,3 @@ if CONNEXION:
 else:
     print("ERREUR DE CONNEXION")
 
-CONNEXION.close()
