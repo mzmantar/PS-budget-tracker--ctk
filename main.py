@@ -1,91 +1,152 @@
 import Connexion
+
 class UserManager:
     def __init__(self, connection):
         self.connection = connection
-        
+
     def register_user(self, firstname, lastname, username, email, password):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s OR email = %s", (username, email))
+            cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
             existing_user = cursor.fetchone()
             if existing_user:
                 print("L'utilisateur existe déjà.")
                 return False
             else:
-                cursor.execute("INSERT INTO user (firstname, lastname, username, email, password) VALUES (%s, %s, %s, %s, %s)", (firstname, lastname, username, email, password))
+                cursor.execute("INSERT INTO users (firstname, lastname, username, email, password) VALUES (%s, %s, %s, %s, %s)",
+                               (firstname, lastname, username, email, password))
                 self.connection.commit()
                 print("Inscription réussie.")
                 return True
 
     def login_user(self, username, password):
         with self.connection.cursor() as cursor:
-            cursor.execute('SELECT * FROM user WHERE username=%s AND password=%s', (username, password))
+            cursor.execute('SELECT * FROM users WHERE username=%s AND password=%s', (username, password))
             user_data = cursor.fetchone()
             if user_data:
                 print("Connexion réussie.")
-                return User(user_data[1], user_data[2], username, password, user_data[4], self.connection)
+                return User(user_data[1], user_data[2], username, password, user_data[3], self.connection)
             else:
                 print("Nom d'utilisateur ou mot de passe incorrect.")
                 return None
-    
-    def update_user(self, username,old_password, new_firstname, new_lastname, new_email, new_password):
+
+    def update_user(self, username, old_password, new_firstname, new_lastname, new_email, new_password):
         with self.connection.cursor() as cursor:
-            cursor.execute("UPDATE user SET firstname=%s, lastname=%s, email=%s, password=%s WHERE username=%s and password=%s", 
+            cursor.execute("UPDATE users SET firstname=%s, lastname=%s, email=%s, password=%s WHERE username=%s AND password=%s",
                            (new_firstname, new_lastname, new_email, new_password, username, old_password))
             if cursor.rowcount > 0:
                 self.connection.commit()
                 print("Informations utilisateur mises à jour.")
             else:
-                print("Aucun utilisateur trouvé avec ce nom d'utilisateur et mot de passe.")
+                print("Identifiants invalides. Mise à jour des informations utilisateur impossible.")
 
-    def delete_account(self, username):
+    def delete_account(self, username, password):
         with self.connection.cursor() as cursor:
-            cursor.execute("DELETE FROM user WHERE username=%s", (username,))
-            self.connection.commit()
-            print("Compte utilisateur supprimé.")
-    
-    def get_password(self,username,email):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT password FROM user WHERE username = %s OR email = %s", (username, email))
-            existing_password = cursor.fetchone()
-            if existing_password:
-                return existing_password[0]
+            cursor.execute("DELETE FROM users WHERE username=%s AND password=%s", (username, password))
+            if cursor.rowcount > 0:
+                self.connection.commit()
+                print("Compte utilisateur supprimé.")
             else:
-                return None
-        
-    def display_user_budgets(self, username):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT budget.category, budget.amount FROM budget INNER JOIN user ON budget.user_id = user.user_id WHERE user.username = %s", (username,))
-            budgets = cursor.fetchall()
-            if budgets:
-                print("Budgets de l'utilisateur", username)
-                for budget in budgets:
-                    print("Catégorie:", budget['category'])
-                    print("Montant:", budget['amount'])
-            else:
-                print("Aucun budget trouvé pour l'utilisateur", username)
+                print("Identifiants invalides. Suppression du compte impossible.")
+
     def get_firstname_lastname(self, username):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT firstname, lastname FROM user WHERE username = %s", (username,))
+            cursor.execute("SELECT firstname, lastname FROM users WHERE username = %s", (username,))
             row = cursor.fetchone()
             if row:
-                firstname, lastname = row  
+                firstname, lastname = row
                 return f"{firstname} {lastname}"
             else:
                 return None
 
-    def display_user_transactions(self, username):
+    def get_budgets(self, username):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT transaction.date, transaction.description, transaction.amount, transaction.category FROM transaction INNER JOIN user ON transaction.user_id = user.user_id WHERE user.username = %s", (username,))
-            transactions = cursor.fetchall()
-            if transactions:
-                print("Transactions de l'utilisateur", username)
-                for transaction in transactions:
-                    print("Date:", transaction['date'])
-                    print("Description:", transaction['description'])
-                    print("Montant:", transaction['amount'])
-                    print("Catégorie:", transaction['category'])
+            cursor.execute("SELECT * FROM budgets WHERE username = %s", (username,))
+            budgets = cursor.fetchall()
+
+            if budgets:
+                budget_list = []
+                for budget in budgets:
+                    budget_id = budget[0]
+                    amount = budget[2]
+                    category = budget[3]
+                    date_b = budget[4]
+                    budget_list.append(f"{budget_id}  {amount}  {category}  {date_b}")
+
+                return "\n".join(budget_list)
             else:
-                print("Aucune transaction trouvée pour l'utilisateur", username)
+                print("Aucun budget trouvé pour cet utilisateur.")
+                return None
+
+    def get_transactions(self, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM transactions WHERE username = %s", (username,))
+            transactions = cursor.fetchall()
+
+            if transactions:
+                transaction_list = []
+                for transaction in transactions:
+                    transaction_id = transaction[0]
+                    amount = transaction[3]
+                    category = transaction[4]
+                    date_Tran = transaction[5]
+                    transaction_list.append(f"{transaction_id}  {amount}  {category}  {date_Tran}")
+
+                return "\n".join(transaction_list)
+            else:
+                print("Aucune transaction trouvée pour cet utilisateur.")
+                return None
+
+    def get_total_budget(self, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT COALESCE(SUM(amount_B), 0) FROM budgets WHERE username = %s", (username,))
+            total_budget_result = cursor.fetchone()[0]
+            return total_budget_result
+
+    def get_sorted_transactions_and_budgets(self, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute("""
+                (SELECT 'transaction' AS type, transaction_id, amount_T, category, date_Tran 
+                FROM transactions 
+                WHERE username = %s)
+                UNION
+                (SELECT 'budget' AS type, budget_id, amount_B, category, date_b 
+                FROM budgets 
+                WHERE username = %s) ORDER BY date_Tran""", (username, username))
+            
+            transactions_and_budgets = cursor.fetchall()
+            if transactions_and_budgets:
+                result_list = []
+                for item in transactions_and_budgets:
+                    if item[0] == 'transaction':
+                        transaction_id = item[1]
+                        amount = item[2]
+                        category = item[3]
+                        date_Tran = item[4]
+                        result_list.append(f"{transaction_id}  {amount}  {category}  {date_Tran}")
+                    elif item[0] == 'budget':
+                        budget_id = item[1]
+                        amount = item[2]
+                        category = item[3]
+                        date_b = item[4]
+                        result_list.append(f"{budget_id}  {amount}  {category}  {date_b}")
+
+                return "\n".join(result_list)
+            else:
+                print("Aucune transaction ni budget trouvé pour cet utilisateur.")
+                return None
+
+    def get_total_transactions(self, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT COALESCE(SUM(amount_T), 0) FROM transactions WHERE username = %s", (username,))
+            total_transactions_result = cursor.fetchone()[0]
+            return total_transactions_result
+
+    def get_balance(self, username):
+        total_budget = self.get_total_budget(username)
+        total_transactions = self.get_total_transactions(username)
+
+        balance = total_budget - total_transactions
+        return balance
 
 
 class User:
@@ -97,147 +158,35 @@ class User:
         self.email = email
         self.connection = connection
 
-    def add_budget(self, username, category, amount_B):
-        if amount_B <= 0:
-            print("Le budget doit être supérieur à zéro.")
-            return
-    
+    def add_budget(self, category, amount_B):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-        
-            if existing_user:
-                cursor.execute("INSERT INTO budget (user_id, category, amount) VALUES (%s, %s, %s)", (existing_user['user_id'], category, amount_B))
+            cursor.execute("INSERT INTO budgets (username, category, amount_B) VALUES (%s, %s, %s)",
+                           (self.username, category, amount_B))
+            self.connection.commit()
+            print("Budget ajouté avec succès.")
+
+    def add_transaction(self, amount_T, category):
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT COALESCE(amount_B, 0) FROM budgets WHERE username = %s AND category = %s", (self.username, category))
+            budget = cursor.fetchone()[0]
+            if budget >= amount_T:
+                cursor.execute("INSERT INTO transactions (username, amount_T, category) VALUES (%s, %s, %s)",
+                               (self.username, amount_T, category))
                 self.connection.commit()
-                print("Budget ajouté avec succès.")
+                print("Transaction ajoutée avec succès.")
             else:
-                print("Utilisateur inexistant.")
-                return
-        
-    def add_transaction(self, username, description, amount_T, amount_B, category):
-        if amount_T <= 0:
-            print("Le montant de la transaction doit être supérieur à zéro.")
-            return
+                print("Le montant de la transaction dépasse le solde disponible pour cette catégorie.")
 
+    def update_transaction(self, transaction_id, new_amount, new_category):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-            cursor.execute("SELECT * FROM budget WHERE category = %s AND user_id = %s", (category, existing_user['user_id']))
-            budget = cursor.fetchone()
-
-            if not budget:
-                print("Budget non défini pour cette catégorie.")
-                return
-
-            remaining_balance = budget['amount'] - amount_T
-            
-            if remaining_balance < 0:
-                print("Le montant de la transaction dépasse le solde disponible.")
-                return
-
-            cursor.execute("INSERT INTO transaction (user_id, description, amount, category) VALUES (%s, %s, %s, %s)", (existing_user['user_id'], description, amount_T, category))
-            self.connection.commit()
-
-            print("Transaction ajoutée avec succès.")
-    
-    def update_budget(self, username, category, new_amount):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-            cursor.execute("UPDATE budget SET amount = %s WHERE user_id = %s AND category = %s", (new_amount, existing_user['user_id'], category))
-            self.connection.commit()
-            print("Budget mis à jour avec succès.")
-
-    def delete_budget(self, username, category):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-            cursor.execute("DELETE FROM budget WHERE user_id = %s AND category = %s", (existing_user['user_id'], category))
-            self.connection.commit()
-            print("Budget supprimé avec succès.")
-
-    def update_transaction(self, username, transaction_id, new_description, new_amount):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-            cursor.execute("UPDATE transaction SET description = %s, amount = %s WHERE user_id = %s AND transaction_id = %s", (new_description, new_amount, existing_user['user_id'], transaction_id))
+            cursor.execute("UPDATE transactions SET category=%s, amount_T=%s WHERE username=%s AND transaction_id=%s",
+                           (new_category, new_amount, self.username, transaction_id))
             self.connection.commit()
             print("Transaction mise à jour avec succès.")
 
-    def delete_transaction(self, username, transaction_id):
+    def delete_transaction(self, transaction_id):
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-            cursor.execute("DELETE FROM transaction WHERE user_id = %s AND transaction_id = %s", (existing_user['user_id'], transaction_id))
+            cursor.execute("DELETE FROM transactions WHERE username=%s AND transaction_id=%s",
+                           (self.username, transaction_id))
             self.connection.commit()
             print("Transaction supprimée avec succès.")
-    
-    def tax_calculation(self, username, amount_B,amount_T, category):
-        with self.connection.cursor() as cursor:
-        
-            cursor.execute("SELECT * FROM user WHERE username = %s", (username,))
-            existing_user = cursor.fetchone()
-        
-            if not existing_user:
-                print("Utilisateur inexistant.")
-                return
-
-        
-            cursor.execute("SELECT * FROM budget WHERE category = %s AND user_id = %s", (category, existing_user['user_id']))
-            budget = cursor.fetchone()
-
-            if not budget:
-                print("Budget non défini pour cette catégorie.")
-                return
-
-    
-            revenu_annuel = ( budget['amount_B'] + Transaction['amount_T'] ) * 12
-    
-            tranches = [(0, 0, 0.0), (3000, 0, 0.08), (5000, 120, 0.22), (10000, 620, 0.32), (20000, 1620, 0.37), (35000, 3620, 0.45)]
-
-    
-            impot = 0
-            for i in range(len(tranches)):
-                if revenu_annuel <= tranches[i][0]:
-                    impot += (revenu_annuel - tranches[i][1]) * tranches[i][2]
-                    break
-                else:
-                    impot += (tranches[i][0] - tranches[i][1]) * tranches[i][2]
-
-            return impot
-
-class Budget:
-    def __init__(self, category, amount_T):
-        self.category = category
-        self.amount_T = amount_T
-
-class Transaction:
-    def __init__(self, description, amount_B, category):
-        self.description = description
-        self.amount_B = amount_B
-        self.category = category

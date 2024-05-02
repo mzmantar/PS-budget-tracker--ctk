@@ -20,8 +20,8 @@ def destroy_window():
     dashbord_BT.destroy()
     login_Page()
     
-def perform_update(old_username, new_firstname_entry, new_lastname_entry, new_email_entry, old_password_entry, new_password_entry):
-    global register_button
+def perform_update():
+    global register_button,old_username, new_firstname_entry, new_lastname_entry, new_email_entry, old_password_entry, new_password_entry,dashbord_BT,update_user_window
     username = old_username.get()
     new_firstname = new_firstname_entry.get()
     new_lastname = new_lastname_entry.get()
@@ -30,39 +30,37 @@ def perform_update(old_username, new_firstname_entry, new_lastname_entry, new_em
     new_password = new_password_entry.get()
     
     user_manager = UserManager(CONNEXION)
-    update_success = user_manager.update_user(username,old_password, new_firstname, new_lastname, new_email, new_password)
+    update_success = user_manager.update_user(username, old_password, new_firstname, new_lastname, new_email, new_password)
         
     if update_success:
         CTkMessagebox(title="Info", message="Félicitations, votre profil a été mis à jour avec succès.")
-        register_button.destroy()
-        login_Page()
-        
+        update_user_window.destroy()
+        dashbord_BT.destroy()
+        login_Page() 
     else:
         CTkMessagebox(title="Erreur", message="Échec de la mise à jour du profil. Veuillez vérifier vos informations.", icon="cancel")
 
-def update_user():
-    global register_button
+def update_user(username,row):
+    global register_button,old_username, new_firstname_entry, new_lastname_entry, new_email_entry, old_password_entry, new_password_entry,update_user_window
     update_user_window = ctk.CTk()
     update_user_window.geometry("800x700")
     update_user_window.title("MISE À JOUR DU PROFIL - BUDGET-TRACKER")
     
-    label = ctk.CTkLabel(update_user_window, font=("", 20, 'bold'), text="---BUDGET-TRACKER---")
-    label.pack(pady=10)
-    
+    label = ctk.CTkLabel(update_user_window,font=("ariel", 20,'bold'), text="BUDGET TRACKER")
+    label.pack(pady=35, padx=20)
+
     frame = ctk.CTkFrame(master=update_user_window)
-    frame.pack(pady=30, padx=40, fill='both', expand=True)
+    frame.pack(pady=15, padx=35, fill='both', expand=True)
     
-    label = ctk.CTkLabel(master=frame, text='Mise à jour du profil :')
+    label = ctk.CTkLabel(master=frame, text=f'UPDATE-PROFIL {row.upper()}')
     label.pack(pady=12, padx=50)
     
-    label = ctk.CTkLabel(master=frame, font=("", 15, 'bold'), text='Attention !!!Le nom utilisateur ne peut pas être modifié.!!!')
-    label.pack(pady=12, padx=50)
-    
-    old_username_entry = ctk.CTkEntry(master=frame, placeholder_text="Nom d'utilisateur")
-    old_username_entry.pack(pady=12, padx=10)
-    
+    old_username = ctk.CTkEntry(master=frame)
+    old_username.insert(0, username)
+    old_username.pack(pady=12, padx=10)
+
     new_firstname_entry = ctk.CTkEntry(master=frame, placeholder_text="Prénom")
-    new_firstname_entry.pack(pady=12, padx=10)
+    new_firstname_entry.pack(pady=12, padx=10)  
     
     new_lastname_entry = ctk.CTkEntry(master=frame, placeholder_text="Nom de famille")
     new_lastname_entry.pack(pady=12, padx=10)
@@ -77,7 +75,7 @@ def update_user():
     new_password_entry.pack(pady=12, padx=10)
     
     register_button = ctk.CTkButton(master=frame, text="Mettre à jour", 
-                                     command=lambda: perform_update(old_username_entry, new_firstname_entry, new_lastname_entry, new_email_entry, old_password_entry, new_password_entry))
+                                     command=lambda: perform_update())
     register_button.pack(pady=12, padx=10)
     
     cancel_button = ctk.CTkButton(master=frame, text='Annuler', command=update_user_window.destroy)
@@ -90,7 +88,7 @@ def update_user():
 
   
 
-def login():
+def login(username_entry,password_entry):
     username = username_entry.get()
     password = password_entry.get()
     
@@ -102,9 +100,13 @@ def login():
                         icon="question", option_1="Cancel",option_3="Yes")
         response = msg.get()
         if response=="Yes":
+            global dashbord_BT,dark_mode_button,user_id,app
             app.destroy()
-            global dashbord_BT,dark_mode_button,user_id
             row = user_manager.get_firstname_lastname(username)
+            budgets = user_manager.get_sorted_transactions_and_budgets(username)
+            total_budge = user_manager.get_total_budget(username)
+            total_transactions = user_manager.get_total_transactions(username)
+            balance = user_manager.get_balance(username)
             dashbord_BT = ctk.CTk()
             dashbord_BT.geometry("1200x700")
             dashbord_BT.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
@@ -114,23 +116,25 @@ def login():
             Dec_button = ctk.CTkButton(master=dashbord_BT, text='DECONNEXION', command=destroy_window)
             Dec_button.pack(side='top', anchor='ne', padx=20, pady=20)
             
-            user_id = ctk.CTkLabel(dashbord_BT, font=("",15), text=f"Bonjour {row.upper()}", cursor="hand2")
+            user_id = ctk.CTkLabel(dashbord_BT, font=("",15), text=f"{row.upper()}", cursor="hand2")
             user_id.pack(side='top', anchor='w', padx=35, pady=20)
-            user_id.bind("<Button-1>", lambda event: update_user())
+            user_id.bind("<Button-1>", lambda event: update_user(username,row))
             
 
             label = ctk.CTkLabel(master=dashbord_BT, font=("", 20, 'bold'), text='---BUDGET-TRACKER---')
             label.pack(pady=2, padx=10, fill='both')
-
+            
             frame2 = ctk.CTkFrame(master=dashbord_BT)
             frame2.pack(side='right', pady=200, padx=15, fill='both')
-
-
+            
             frame1 = ctk.CTkFrame(master=dashbord_BT)
             frame1.pack(side='left', pady=200, padx=15, fill='both')
 
             frame = ctk.CTkFrame(master=dashbord_BT)
             frame.pack(pady=100, padx=5, fill='both', expand=True)
+            
+            label = ctk.CTkLabel(master=frame, text=f'{budgets}')
+            label.pack(pady=2, padx=10, fill='both')
             
             dark_mode_button = ctk.CTkSwitch(dashbord_BT, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', command=toggle_dark_mode)
             dark_mode_button.pack(pady=10)
@@ -144,7 +148,7 @@ def login():
             login_Page()
                         
     else:
-        CTkMessagebox(title="Error", message="Nom d'utilisateur ou mot de passe invalide.!!!", icon="cancel")
+        CTkMessagebox(title="Error", message="Nom d'utilisateur ou mot de passe invalide.!!!", icon="cancel").get()
 
 
 def validate_email(email):
@@ -279,22 +283,22 @@ def login_Page():
     app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
     app.iconbitmap("logo/badgettraker.ico")
 
-    label = ctk.CTkLabel(app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
-    label.pack(pady=10)
+    label = ctk.CTkLabel(app,font=("ariel", 20,'bold'), text="BUDGET TRACKER")
+    label.pack(pady=35, padx=20)
 
     frame = ctk.CTkFrame(master=app)
-    frame.pack(pady=50, padx=30, fill='both', expand=True)
+    frame.pack(pady=15, padx=35, fill='both', expand=True)
 
     label = ctk.CTkLabel(master=frame, text='CONNEXION')
     label.pack(pady=7, padx=50)
-    global username_entry
+
     username_entry = ctk.CTkEntry(master=frame, placeholder_text="Nom d'utilisateur")
     username_entry.pack(pady=12, padx=10)
-    global password_entry
+
     password_entry = ctk.CTkEntry(master=frame, placeholder_text="Mot de passe", show="*")
     password_entry.pack(pady=12, padx=10)
 
-    button = ctk.CTkButton(master=frame, text='Connexion', command=lambda: login())
+    button = ctk.CTkButton(master=frame, text='Connexion', command=lambda: login(username_entry, password_entry))
     button.pack(pady=12, padx=10)
 
     checkbox = ctk.CTkCheckBox(master=frame, text='Se souvenir de moi')
