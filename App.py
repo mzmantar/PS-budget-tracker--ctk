@@ -3,23 +3,18 @@ import customtkinter as ctk
 import customtkinter
 
 from main import UserManager
-from CTkMessagebox import CTkMessagebox
 from Connexion import CONNEXION
+from CTkMessagebox import CTkMessagebox
 
 customtkinter.set_appearance_mode("light")
 
 def toggle_dark_mode():
-    global dark_mode_button
-    if dark_mode_button.get():
-        ctk.set_appearance_mode("dark")
+    global dark_mode_variable
+    if dark_mode_variable.get() == 1:
+        customtkinter.set_appearance_mode("dark")
     else:
-        ctk.set_appearance_mode("light")
+        customtkinter.set_appearance_mode("light")
 
-def destroy_window():
-    global dashbord_BT
-    dashbord_BT.destroy()
-    login_Page()
-    
 def perform_update():
     global register_button,old_username, new_firstname_entry, new_lastname_entry, new_email_entry, old_password_entry, new_password_entry,dashbord_BT,update_user_window
     username = old_username.get()
@@ -35,8 +30,7 @@ def perform_update():
     if update_success:
         CTkMessagebox(title="Info", message="Félicitations, votre profil a été mis à jour avec succès.")
         update_user_window.destroy()
-        dashbord_BT.destroy()
-        login_Page() 
+        deconnexion()
     else:
         CTkMessagebox(title="Erreur", message="Échec de la mise à jour du profil. Veuillez vérifier vos informations.", icon="cancel")
 
@@ -85,8 +79,15 @@ def update_user(username,row):
     budget_tracker_label.pack(pady=10)
     
     update_user_window.mainloop()
-
-  
+    
+def deconnexion():
+    global dashboard_frame, login_frame, app
+    dashboard_frame.pack_forget()
+    app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
+    app.geometry("800x600")
+    login_frame.pack()
+    global password_entry
+    password_entry.delete(0, 'end')
 
 def login(username_entry,password_entry):
     username = username_entry.get()
@@ -95,62 +96,109 @@ def login(username_entry,password_entry):
     user_manager = UserManager(CONNEXION)
     User = user_manager.login_user(username, password)
     
-    if User:
-        msg = CTkMessagebox(title="Exit?", message="Connexion réussie.",
-                        icon="question", option_1="Cancel",option_3="Yes")
-        response = msg.get()
-        if response=="Yes":
-            global dashbord_BT,dark_mode_button,user_id,app
-            app.destroy()
-            row = user_manager.get_firstname_lastname(username)
-            budgets = user_manager.get_sorted_transactions_and_budgets(username)
-            total_budge = user_manager.get_total_budget(username)
-            total_transactions = user_manager.get_total_transactions(username)
-            balance = user_manager.get_balance(username)
-            dashbord_BT = ctk.CTk()
-            dashbord_BT.geometry("1200x700")
-            dashbord_BT.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
-            dashbord_BT.iconbitmap("logo/badgettraker.ico")
-            
-            
-            Dec_button = ctk.CTkButton(master=dashbord_BT, text='DECONNEXION', command=destroy_window)
-            Dec_button.pack(side='top', anchor='ne', padx=20, pady=20)
-            
-            user_id = ctk.CTkLabel(dashbord_BT, font=("",15), text=f"{row.upper()}", cursor="hand2")
-            user_id.pack(side='top', anchor='w', padx=35, pady=20)
-            user_id.bind("<Button-1>", lambda event: update_user(username,row))
-            
+    if not User:
+        CTkMessagebox(title="Error", message="Votre username ou mot de passe est incorrect", icon="cancel")
+        return
+    
+    login_frame.pack_forget()
 
-            label = ctk.CTkLabel(master=dashbord_BT, font=("", 20, 'bold'), text='---BUDGET-TRACKER---')
-            label.pack(pady=2, padx=10, fill='both')
-            
-            frame2 = ctk.CTkFrame(master=dashbord_BT)
-            frame2.pack(side='right', pady=200, padx=15, fill='both')
-            
-            frame1 = ctk.CTkFrame(master=dashbord_BT)
-            frame1.pack(side='left', pady=200, padx=15, fill='both')
+    global dashboard_frame
+    dashboard_frame = ctk.CTkFrame(app, fg_color="transparent")
+    dashboard_frame.pack(pady=15, padx=35, fill='both', expand=True)
 
-            frame = ctk.CTkFrame(master=dashbord_BT)
-            frame.pack(pady=100, padx=5, fill='both', expand=True)
-            
-            label = ctk.CTkLabel(master=frame, text=f'{budgets}')
-            label.pack(pady=2, padx=10, fill='both')
-            
-            dark_mode_button = ctk.CTkSwitch(dashbord_BT, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', command=toggle_dark_mode)
-            dark_mode_button.pack(pady=10)
+    global user_id
+    row = user_manager.get_firstname_lastname(username)
+    budgets = user_manager.get_sorted_transactions_and_budgets(username)
+    total_budge = user_manager.get_total_budget(username)
+    total_transactions = user_manager.get_total_transactions(username)
+    balance = user_manager.get_balance(username)
 
-            Budjet_traker = ctk.CTkLabel(dashbord_BT, font=("", 10), text="© Budget-tracker 2024-2025 Conception et réalisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits réservés.")
-            Budjet_traker.pack(pady=10)
+    rows =user_manager.get_sorted_transactions_and_budgets_matrix(username)
 
-            dashbord_BT.mainloop()
-        else:
-            app.destroy()
-            login_Page()
-                        
-    else:
-        CTkMessagebox(title="Error", message="Nom d'utilisateur ou mot de passe invalide.!!!", icon="cancel").get()
+    app.geometry("1200x900")
+    app.title("DASHBOARD - BUDGET-TRACKER")
+    #dashbord_BT.iconbitmap("logo/badgettraker.ico")
 
+    global dark_mode_variable
 
+    Dec_button = ctk.CTkButton(dashboard_frame, text='DECONNEXION', command=deconnexion)
+    Dec_button.pack(side='top', anchor='ne', padx=20, pady=20)
+    
+    user_id = ctk.CTkLabel(dashboard_frame, font=("",15), text=f"{row.upper()}", cursor="hand2")
+    user_id.pack(side='top', anchor='w', padx=35, pady=20)
+    user_id.bind("<Button-1>", lambda e: update_user(username,row))
+
+    label = ctk.CTkLabel(dashboard_frame, font=("", 20, 'bold'), text='---BUDGET-TRACKER---')
+    label.pack(pady=2, padx=10, fill='both')
+    
+    frame2 = ctk.CTkFrame(dashboard_frame)
+    frame2.pack(side='right', pady=200, padx=15, fill='both')
+    
+    frame1 = ctk.CTkFrame(dashboard_frame)
+    frame1.pack(side='left', pady=200, padx=15, fill='both')
+
+    middle_frame = ctk.CTkFrame(dashboard_frame)
+    middle_frame.pack(pady=100, padx=5, fill='both', expand=True)
+
+    balance_label = ctk.CTkLabel(middle_frame, font=("", 28), text=f"Balance: {int(balance)}DT")
+    balance_label.pack(pady=10, padx=10)
+
+    # Rows Frame
+    rows_frame = ctk.CTkScrollableFrame(middle_frame, height=100, label_font=("", 20))
+    rows_frame.pack(pady=10, padx=10, fill='both', expand=True)
+
+    id_labell = ctk.CTkLabel(rows_frame, text="ID")
+    id_labell.grid(row=0, column=0, padx=20, pady=10)
+
+    ttype_labell = ctk.CTkLabel(rows_frame, text="Type")
+    ttype_labell.grid(row=0, column=1, padx=20, pady=10)
+
+    amount_labell = ctk.CTkLabel(rows_frame, text="Montant")
+    amount_labell.grid(row=0, column=2, padx=20, pady=10)
+
+    category_labell = ctk.CTkLabel(rows_frame, text="Catégorie")
+    category_labell.grid(row=0, column=3, padx=20, pady=10)
+
+    date_labell = ctk.CTkLabel(rows_frame, text="Date")
+    date_labell.grid(row=0, column=4, padx=20, pady=10)
+
+    for i, row in enumerate(rows):
+        id = row[0]
+        ttype = row[1]
+        amount = row[2]
+        category = row[3]
+        date = row[4]
+
+        id_label = ctk.CTkLabel(rows_frame, text=f"{id}")
+        id_label.grid(row=i+1, column=0, padx=20, pady=10)
+
+        ttype_label = ctk.CTkLabel(rows_frame, text=f"{ttype}")
+        ttype_label.grid(row=i+1, column=1, padx=20, pady=10)
+
+        amount_label = ctk.CTkLabel(rows_frame, text=f"{amount}DT")
+        amount_label.grid(row=i+1, column=2, padx=20, pady=10)
+
+        category_label = ctk.CTkLabel(rows_frame, text=f"{category}")
+        category_label.grid(row=i+1, column=3, padx=20, pady=10)
+
+        date_label = ctk.CTkLabel(rows_frame, text=f"{date}")
+        date_label.grid(row=i+1, column=4, padx=20, pady=10)
+
+    select_combobox = ctk.CTkComboBox(middle_frame, values=["Budget", "Transaction"])
+    select_combobox.pack(pady=10, padx=10, fill='both')
+
+    ammount_entry = ctk.CTkEntry(middle_frame, placeholder_text="Montant")
+    ammount_entry.pack(pady=10, padx=10, fill='both')
+
+    submit_button = ctk.CTkButton(middle_frame, text="Ajouter")
+    submit_button.pack(pady=10, padx=10, fill='both')
+    
+    dark_mode_button = ctk.CTkSwitch(dashboard_frame, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', variable=dark_mode_variable, command=toggle_dark_mode)
+    dark_mode_button.pack(pady=10)
+
+    Budjet_traker = ctk.CTkLabel(dashboard_frame, font=("", 10), text="© Budget-tracker 2024-2025 Conception et réalisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits réservés.")
+    Budjet_traker.pack(pady=10)
+    
 def validate_email(email):
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         CTkMessagebox(title="Error", message="Adresse email invalide!!!", icon="cancel")
@@ -188,7 +236,7 @@ def open_registration_page():
     registration_app = ctk.CTk()
     registration_app.geometry("600x560")
     registration_app.title("Page d'Inscription - BUDGET-TRACKER")
-    registration_app.iconbitmap("logo/badgettraker.ico")
+    #registration_app.iconbitmap("logo/badgettraker.ico")
     
     label = ctk.CTkLabel(registration_app,font=("", 20,'bold'), text="---BUDGET-TRACKER---")
     label.pack(pady=10)
@@ -237,15 +285,13 @@ def Recovery_password():
         CTkMessagebox(title="Info", message="verifier votre mail")
     else:
         CTkMessagebox(title="Error", message="votre username ou votre email invalide!!!", icon="cancel")
-    
-    
 
 def forgot_password():
     global rp_user_entry , rp_email_entry
     password_app = ctk.CTk()
     password_app.geometry("600x470")
     password_app.title("PAGE RECOVER PASSWORD - BUDGET-TRACKER")
-    password_app.iconbitmap("logo/badgettraker.ico")
+    #password_app.iconbitmap("logo/badgettraker.ico")
     label = ctk.CTkLabel(master=password_app,font=("", 20,'bold'),text='---BUDGET-TRACKER---')
     label.pack(pady=12, padx=50, fill='both')
         
@@ -275,18 +321,25 @@ def forgot_password():
     
     password_app.mainloop()
 
-
 def login_Page():
-    global app, dark_mode_button
+    global app
     app = ctk.CTk()
     app.geometry("800x600")
     app.title("PAGE DE CONNEXION - BUDGET-TRACKER")
-    app.iconbitmap("logo/badgettraker.ico")
+    #app.iconbitmap("logo/badgettraker.ico")
 
-    label = ctk.CTkLabel(app,font=("ariel", 20,'bold'), text="BUDGET TRACKER")
+    # darkmode variable
+    global dark_mode_variable
+    dark_mode_variable = ctk.IntVar()
+
+    global login_frame
+    login_frame = ctk.CTkFrame(master=app, fg_color="transparent")
+    login_frame.pack(pady=15, padx=35, fill='both', expand=True)
+
+    label = ctk.CTkLabel(login_frame,font=("ariel", 20,'bold'), text="BUDGET TRACKER")
     label.pack(pady=35, padx=20)
 
-    frame = ctk.CTkFrame(master=app)
+    frame = ctk.CTkFrame(master=login_frame)
     frame.pack(pady=15, padx=35, fill='both', expand=True)
 
     label = ctk.CTkLabel(master=frame, text='CONNEXION')
@@ -295,6 +348,7 @@ def login_Page():
     username_entry = ctk.CTkEntry(master=frame, placeholder_text="Nom d'utilisateur")
     username_entry.pack(pady=12, padx=10)
 
+    global password_entry
     password_entry = ctk.CTkEntry(master=frame, placeholder_text="Mot de passe", show="*")
     password_entry.pack(pady=12, padx=10)
 
@@ -304,18 +358,18 @@ def login_Page():
     checkbox = ctk.CTkCheckBox(master=frame, text='Se souvenir de moi')
     checkbox.pack(pady=12, padx=10)
 
-    register_link = ctk.CTkLabel(app, text="Pas encore inscrit ? Cliquez ici pour vous inscrire.", cursor="hand2")
+    register_link = ctk.CTkLabel(login_frame, text="Pas encore inscrit ? Cliquez ici pour vous inscrire.", cursor="hand2")
     register_link.pack(pady=10)
     register_link.bind("<Button-1>", lambda e: open_registration_page())
 
-    forgot_password_label = ctk.CTkLabel(app, text="Mot de passe oublié ?", cursor="hand2")
+    forgot_password_label = ctk.CTkLabel(login_frame, text="Mot de passe oublié ?", cursor="hand2")
     forgot_password_label.pack(pady=10)
     forgot_password_label.bind("<Button-1>", lambda e: forgot_password())
 
-    dark_mode_button = ctk.CTkSwitch(app,onvalue=1,offvalue=0, text='Activer le mode dark ou light' ,command=toggle_dark_mode)
+    dark_mode_button = ctk.CTkSwitch(login_frame, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', variable=dark_mode_variable, command=toggle_dark_mode)
     dark_mode_button.pack(pady=10)
 
-    Budjet_traker = ctk.CTkLabel(app,font=("", 10), text="© Budjet-traker 2024-2025 Conception et realisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits reserves.")
+    Budjet_traker = ctk.CTkLabel(login_frame,font=("", 10), text="© Budjet-traker 2024-2025 Conception et realisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits reserves.")
     Budjet_traker.pack(pady=10)
 
     app.mainloop()
