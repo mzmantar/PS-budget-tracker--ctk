@@ -89,6 +89,8 @@ def deconnexion():
     global password_entry
     password_entry.delete(0, 'end')
 
+
+
 def login(username_entry,password_entry):
     username = username_entry.get()
     password = password_entry.get()
@@ -102,10 +104,6 @@ def login(username_entry,password_entry):
     
     login_frame.pack_forget()
 
-    global dashboard_frame
-    dashboard_frame = ctk.CTkFrame(app, fg_color="transparent")
-    dashboard_frame.pack(pady=15, padx=35, fill='both', expand=True)
-
     global user_id
     row = user_manager.get_firstname_lastname(username)
     budgets = user_manager.get_sorted_transactions_and_budgets(username)
@@ -114,91 +112,121 @@ def login(username_entry,password_entry):
     balance = user_manager.get_balance(username)
 
     rows =user_manager.get_sorted_transactions_and_budgets_matrix(username)
-
-    app.geometry("1200x900")
+    
+    
+    global dashboard_frame
+    dashboard_frame = ctk.CTkFrame(app,fg_color="transparent")
+    dashboard_frame.pack(pady=5, padx=42, fill='both', expand=True)
+    app.geometry("1200x850")
     app.title("DASHBOARD - BUDGET-TRACKER")
     #dashbord_BT.iconbitmap("logo/badgettraker.ico")
 
     global dark_mode_variable
-
+        
+    
     Dec_button = ctk.CTkButton(dashboard_frame, text='DECONNEXION', command=deconnexion)
-    Dec_button.pack(side='top', anchor='ne', padx=20, pady=20)
+    Dec_button.pack(side='top', anchor='ne', padx=10, pady=5)
+    
     
     user_id = ctk.CTkLabel(dashboard_frame, font=("",15), text=f"{row.upper()}", cursor="hand2")
-    user_id.pack(side='top', anchor='w', padx=35, pady=20)
+    user_id.pack(side='top', anchor='w', padx=35, pady=5)
     user_id.bind("<Button-1>", lambda e: update_user(username,row))
-
-    label = ctk.CTkLabel(dashboard_frame, font=("", 20, 'bold'), text='---BUDGET-TRACKER---')
-    label.pack(pady=2, padx=10, fill='both')
     
-    frame2 = ctk.CTkFrame(dashboard_frame)
-    frame2.pack(side='right', pady=200, padx=15, fill='both')
+
+    principale_frame = ctk.CTkFrame(dashboard_frame, height=200)
+    principale_frame.pack(pady=150, padx=5, fill='both', expand=True)
     
-    frame1 = ctk.CTkFrame(dashboard_frame)
-    frame1.pack(side='left', pady=200, padx=15, fill='both')
+    
+    middle_frame = ctk.CTkFrame(principale_frame)
+    middle_frame.pack(pady=5, padx=250, fill='both', expand=True)
 
-    middle_frame = ctk.CTkFrame(dashboard_frame)
-    middle_frame.pack(pady=100, padx=5, fill='both', expand=True)
+    balance_label = ctk.CTkLabel(middle_frame, font=("", 20), text=f"Balance {int(balance)} DT")
+    balance_label.pack(pady=5, padx=10)
+      
+    frame1 = ctk.CTkFrame(principale_frame)
+    frame1.pack(side='left', pady=25, padx=50, fill='both')
+    
+    income_label = ctk.CTkLabel(frame1, font=("", 20), text=f"Income \n {int(total_budge)} DT")
+    income_label.pack(pady=5, padx=10)
+    
+    frame2 = ctk.CTkFrame(principale_frame)
+    frame2.pack(side='right', pady=25, padx=50, fill='both')
+    
+    Expense_label = ctk.CTkLabel(frame2, font=("", 20), text=f"Expense \n {int(total_transactions)} DT")
+    Expense_label.pack(pady=5, padx=10)
+    
+    select_combobox = ctk.CTkComboBox(principale_frame, values=["Budget", "Transaction"])
+    select_combobox.pack(pady=2, padx=5, fill='both')
 
-    balance_label = ctk.CTkLabel(middle_frame, font=("", 28), text=f"Balance: {int(balance)}DT")
-    balance_label.pack(pady=10, padx=10)
+    ammount_entry = ctk.CTkEntry(principale_frame, placeholder_text="Montant")
+    ammount_entry.pack(pady=2, padx=5, fill='both')
 
-    # Rows Frame
-    rows_frame = ctk.CTkScrollableFrame(middle_frame, height=100, label_font=("", 20))
-    rows_frame.pack(pady=10, padx=10, fill='both', expand=True)
-
-    id_labell = ctk.CTkLabel(rows_frame, text="ID")
-    id_labell.grid(row=0, column=0, padx=20, pady=10)
-
-    ttype_labell = ctk.CTkLabel(rows_frame, text="Type")
-    ttype_labell.grid(row=0, column=1, padx=20, pady=10)
-
-    amount_labell = ctk.CTkLabel(rows_frame, text="Montant")
-    amount_labell.grid(row=0, column=2, padx=20, pady=10)
-
-    category_labell = ctk.CTkLabel(rows_frame, text="Catégorie")
-    category_labell.grid(row=0, column=3, padx=20, pady=10)
-
-    date_labell = ctk.CTkLabel(rows_frame, text="Date")
-    date_labell.grid(row=0, column=4, padx=20, pady=10)
-
-    for i, row in enumerate(rows):
-        id = row[0]
-        ttype = row[1]
-        amount = row[2]
-        category = row[3]
-        date = row[4]
-
-        id_label = ctk.CTkLabel(rows_frame, text=f"{id}")
-        id_label.grid(row=i+1, column=0, padx=20, pady=10)
-
-        ttype_label = ctk.CTkLabel(rows_frame, text=f"{ttype}")
-        ttype_label.grid(row=i+1, column=1, padx=20, pady=10)
-
-        amount_label = ctk.CTkLabel(rows_frame, text=f"{amount}DT")
-        amount_label.grid(row=i+1, column=2, padx=20, pady=10)
-
-        category_label = ctk.CTkLabel(rows_frame, text=f"{category}")
-        category_label.grid(row=i+1, column=3, padx=20, pady=10)
-
-        date_label = ctk.CTkLabel(rows_frame, text=f"{date}")
-        date_label.grid(row=i+1, column=4, padx=20, pady=10)
-
-    select_combobox = ctk.CTkComboBox(middle_frame, values=["Budget", "Transaction"])
-    select_combobox.pack(pady=10, padx=10, fill='both')
-
-    ammount_entry = ctk.CTkEntry(middle_frame, placeholder_text="Montant")
-    ammount_entry.pack(pady=10, padx=10, fill='both')
-
-    submit_button = ctk.CTkButton(middle_frame, text="Ajouter")
-    submit_button.pack(pady=10, padx=10, fill='both')
+    submit_button = ctk.CTkButton(principale_frame, text="Ajouter")
+    submit_button.pack(pady=2, padx=5, fill='both')
+    
+    Budjet_traker = ctk.CTkLabel(principale_frame, font=("", 12), text="© Budget-tracker 2024-2025 Conception et réalisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits réservés.")
+    Budjet_traker.pack(pady=2)
     
     dark_mode_button = ctk.CTkSwitch(dashboard_frame, onvalue=1, offvalue=0, text='Activer le mode sombre ou clair', variable=dark_mode_variable, command=toggle_dark_mode)
-    dark_mode_button.pack(pady=10)
-
-    Budjet_traker = ctk.CTkLabel(dashboard_frame, font=("", 10), text="© Budget-tracker 2024-2025 Conception et réalisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits réservés.")
-    Budjet_traker.pack(pady=10)
+    dark_mode_button.pack(pady=1)
     
+    
+    # Rows Frame
+    rows_frame = ctk.CTkScrollableFrame(middle_frame, height=100, label_font=("", 28))
+    rows_frame.pack(pady=10, padx=5, fill='both', expand=True)
+    
+    ii_labell = ctk.CTkLabel(rows_frame, text="")
+    ii_labell.grid(row=0, column=0, padx=10, pady=10)
+
+    id_labell = ctk.CTkLabel(rows_frame, text="ID")
+    id_labell.grid(row=0, column=1, padx=10, pady=10)
+
+    ttype_labell = ctk.CTkLabel(rows_frame, text="Type")
+    ttype_labell.grid(row=0, column=2, padx=10, pady=10)
+
+    amount_labell = ctk.CTkLabel(rows_frame, text="Montant")
+    amount_labell.grid(row=0, column=3, padx=10, pady=10)
+
+    category_labell = ctk.CTkLabel(rows_frame, text="Catégorie")
+    category_labell.grid(row=0, column=4, padx=10, pady=10)
+
+    date_labell = ctk.CTkLabel(rows_frame, text="Date")
+    date_labell.grid(row=0, column=5, padx=10, pady=10)
+    
+    date_labell = ctk.CTkLabel(rows_frame, text="SUPPRIMER")
+    date_labell.grid(row=0, column=6, padx=10, pady=10)
+
+    for i, rows in enumerate(rows):
+        id = rows[0]
+        ttype = rows[1]
+        amount = rows[2]
+        category = rows[3]
+        date = rows[4]
+        
+        # dtb=user_manager.delete_transaction_budget(id,ttype)
+        
+        ii_label = ctk.CTkLabel(rows_frame, text="")
+        ii_label.grid(row=i+1, column=0, padx=10, pady=10)
+
+        id_label = ctk.CTkLabel(rows_frame, text=f"{id}")
+        id_label.grid(row=i+1, column=1, padx=10, pady=10)
+
+        ttype_label = ctk.CTkLabel(rows_frame, text=f"{ttype}")
+        ttype_label.grid(row=i+1, column=2, padx=10, pady=10)
+
+        amount_label = ctk.CTkLabel(rows_frame, text=f"{amount}DT")
+        amount_label.grid(row=i+1, column=3, padx=10, pady=10)
+
+        category_label = ctk.CTkLabel(rows_frame, text=f"{category}")
+        category_label.grid(row=i+1, column=4, padx=10, pady=10)
+
+        date_label = ctk.CTkLabel(rows_frame, text=f"{date}")
+        date_label.grid(row=i+1, column=5, padx=10, pady=10)
+        
+        supp_label = ctk.CTkButton(rows_frame , text="Drop", width=10, height=10)
+        supp_label.grid(row=i+1, column=6, padx=10, pady=10)
+    
+ 
 def validate_email(email):
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         CTkMessagebox(title="Error", message="Adresse email invalide!!!", icon="cancel")

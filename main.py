@@ -223,9 +223,19 @@ class User:
             self.connection.commit()
             print("Transaction mise à jour avec succès.")
 
-    def delete_transaction(self, transaction_id):
+    def delete_transaction_budget(self, transaction_id, delete_type):
         with self.connection.cursor() as cursor:
-            cursor.execute("DELETE FROM transactions WHERE username=%s AND transaction_id=%s",
-                           (self.username, transaction_id))
+            if delete_type == "transaction":
+                cursor.execute("DELETE FROM transactions WHERE transaction_id=%s",
+                            (transaction_id))
+                return True
+            elif delete_type == "budget":
+                cursor.execute("DELETE FROM budgets WHERE budget_id=%s",
+                            (transaction_id))
+                cursor.execute("DELETE FROM transactions WHERE budget_id=%s",
+                            (transaction_id))
+                return True
+            else:
+                return False
             self.connection.commit()
-            print("Transaction supprimée avec succès.")
+
