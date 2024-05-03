@@ -175,7 +175,7 @@ def login(username_entry,password_entry):
     rows_frame = ctk.CTkScrollableFrame(middle_frame, height=100, label_font=("", 28))
     rows_frame.pack(pady=10, padx=5, fill='both', expand=True)
     
-    ii_labell = ctk.CTkLabel(rows_frame, text="")
+    ii_labell = ctk.CTkLabel(rows_frame, text="N°")
     ii_labell.grid(row=0, column=0, padx=10, pady=10)
 
     id_labell = ctk.CTkLabel(rows_frame, text="ID")
@@ -205,7 +205,7 @@ def login(username_entry,password_entry):
         
         # dtb=user_manager.delete_transaction_budget(id,ttype)
         
-        ii_label = ctk.CTkLabel(rows_frame, text="")
+        ii_label = ctk.CTkLabel(rows_frame, text=f"{i+1}")
         ii_label.grid(row=i+1, column=0, padx=10, pady=10)
 
         id_label = ctk.CTkLabel(rows_frame, text=f"{id}")

@@ -1,4 +1,5 @@
 class UserManager:
+    
     def __init__(self, connection):
         self.connection = connection
 
@@ -186,8 +187,6 @@ class UserManager:
 
         balance = total_budget - total_transactions
         return balance
-    
-
 class User:
     def __init__(self, firstname, lastname, username, password, email, connection):
         self.firstname = firstname
