@@ -89,7 +89,29 @@ def deconnexion():
     global password_entry
     password_entry.delete(0, 'end')
 
-
+def ajout(ttype_entry, category_entry, amount_entry, username):
+    ttype = ttype_entry.get()
+    category = category_entry.get()
+    amount = amount_entry.get()
+    
+    user_manager = UserManager(CONNEXION)
+    
+    if ttype == 'Budget':
+        user_manager.add_budget(category, amount, username)
+    elif ttype == 'Transaction':
+        user_manager.add_transaction(category, amount, username)
+        
+    global dashboard_frame
+    dashboard_frame.pack_forget()
+    dash(username)
+    
+def delete(id, ttype, username):
+    user_manager = UserManager(CONNEXION)
+    
+    user_manager.delete_transaction_budget(id, ttype)
+    global dashboard_frame
+    dashboard_frame.pack_forget()
+    dash(username)
 
 def login(username_entry,password_entry):
     username = username_entry.get()
@@ -105,21 +127,23 @@ def login(username_entry,password_entry):
     login_frame.pack_forget()
 
     global user_id
-    row = user_manager.get_firstname_lastname(username)
+    dash(username)
+
+def dash(username):
+    user_manager = UserManager(CONNEXION)
     budgets = user_manager.get_sorted_transactions_and_budgets(username)
     total_budge = user_manager.get_total_budget(username)
     total_transactions = user_manager.get_total_transactions(username)
     balance = user_manager.get_balance(username)
-
-    rows =user_manager.get_sorted_transactions_and_budgets_matrix(username)
-    
+    row = user_manager.get_firstname_lastname(username)
+    rows = user_manager.get_sorted_transactions_and_budgets_matrix(username)
     
     global dashboard_frame
     dashboard_frame = ctk.CTkFrame(app,fg_color="transparent")
     dashboard_frame.pack(pady=5, padx=42, fill='both', expand=True)
     app.geometry("1200x850")
     app.title("DASHBOARD - BUDGET-TRACKER")
-    #dashbord_BT.iconbitmap("logo/badgettraker.ico")
+    #app.iconbitmap("logo/badgettraker.ico")
 
     global dark_mode_variable
         
@@ -157,11 +181,14 @@ def login(username_entry,password_entry):
     
     select_combobox = ctk.CTkComboBox(principale_frame, values=["Budget", "Transaction"])
     select_combobox.pack(pady=2, padx=5, fill='both')
+    
+    category_entry = ctk.CTkEntry(principale_frame, placeholder_text="Category")
+    category_entry.pack(pady=2, padx=5, fill='both')
 
     ammount_entry = ctk.CTkEntry(principale_frame, placeholder_text="Montant")
     ammount_entry.pack(pady=2, padx=5, fill='both')
 
-    submit_button = ctk.CTkButton(principale_frame, text="Ajouter")
+    submit_button = ctk.CTkButton(principale_frame, text="Ajouter", command= lambda: ajout(select_combobox, category_entry, ammount_entry, username))
     submit_button.pack(pady=2, padx=5, fill='both')
     
     Budjet_traker = ctk.CTkLabel(principale_frame, font=("", 12), text="© Budget-tracker 2024-2025 Conception et réalisation par Med-Mehdi ZMANTAR & Jassem BOUGHATAS. Tous droits réservés.")
@@ -195,6 +222,9 @@ def login(username_entry,password_entry):
     
     date_labell = ctk.CTkLabel(rows_frame, text="SUPPRIMER")
     date_labell.grid(row=0, column=6, padx=10, pady=10)
+    
+    if len(rows) == 0:
+        return None
 
     for i, rows in enumerate(rows):
         id = rows[0]
@@ -223,10 +253,11 @@ def login(username_entry,password_entry):
         date_label = ctk.CTkLabel(rows_frame, text=f"{date}")
         date_label.grid(row=i+1, column=5, padx=10, pady=10)
         
-        supp_label = ctk.CTkButton(rows_frame , text="Drop", width=10, height=10)
+        supp_label = ctk.CTkButton(rows_frame , text="Drop", width=10, height=10, command=lambda: delete(id, ttype, username))
         supp_label.grid(row=i+1, column=6, padx=10, pady=10)
     
  
+
 def validate_email(email):
     if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
         CTkMessagebox(title="Error", message="Adresse email invalide!!!", icon="cancel")

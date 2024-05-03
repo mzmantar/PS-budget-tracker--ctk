@@ -187,6 +187,57 @@ class UserManager:
 
         balance = total_budget - total_transactions
         return balance
+    
+    def add_budget(self, category, amount_B, username):
+        with self.connection.cursor() as cursor:
+            
+            cursor.execute('SELECT * FROM users WHERE username=%s', (username,))
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                return False
+            
+            cursor.execute("INSERT INTO budgets (username, category, amount_B) VALUES (%s, %s, %s)",
+                           (username, category, amount_B))
+            if cursor.rowcount > 0:
+                self.connection.commit()
+                return True
+            else:
+                return False
+            
+
+    def add_transaction(self,category, amount_T, username):
+        with self.connection.cursor() as cursor:
+            cursor.execute('SELECT * FROM users WHERE username=%s', (username,))
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                return False
+            
+            cursor.execute("INSERT INTO transactions (username, amount_T, category) VALUES (%s, %s, %s)",
+                               (username, amount_T, category))
+            
+            if cursor.rowcount > 0:
+                self.connection.commit()
+                return True
+            else:
+                return False
+            
+    def delete_transaction_budget(self, transaction_id, delete_type):
+        with self.connection.cursor() as cursor:
+            if delete_type == "transaction":
+                cursor.execute("DELETE FROM transactions WHERE transaction_id=%s",
+                            (transaction_id,))
+                return True
+            elif delete_type == "budget":
+                cursor.execute("DELETE FROM budgets WHERE budget_id=%s",
+                            (transaction_id,))
+                return True
+            else:
+                return False
+            
+            self.connection.commit()
+                
 class User:
     def __init__(self, firstname, lastname, username, password, email, connection):
         self.firstname = firstname
@@ -196,25 +247,6 @@ class User:
         self.email = email
         self.connection = connection
 
-    def add_budget(self, category, amount_B):
-        with self.connection.cursor() as cursor:
-            cursor.execute("INSERT INTO budgets (username, category, amount_B) VALUES (%s, %s, %s)",
-                           (self.username, category, amount_B))
-            self.connection.commit()
-            print("Budget ajouté avec succès.")
-
-    def add_transaction(self, amount_T, category):
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT COALESCE(amount_B, 0) FROM budgets WHERE username = %s AND category = %s", (self.username, category))
-            budget = cursor.fetchone()[0]
-            if budget >= amount_T:
-                cursor.execute("INSERT INTO transactions (username, amount_T, category) VALUES (%s, %s, %s)",
-                               (self.username, amount_T, category))
-                self.connection.commit()
-                print("Transaction ajoutée avec succès.")
-            else:
-                print("Le montant de la transaction dépasse le solde disponible pour cette catégorie.")
-
     def update_transaction(self, transaction_id, new_amount, new_category):
         with self.connection.cursor() as cursor:
             cursor.execute("UPDATE transactions SET category=%s, amount_T=%s WHERE username=%s AND transaction_id=%s",
@@ -222,19 +254,5 @@ class User:
             self.connection.commit()
             print("Transaction mise à jour avec succès.")
 
-    def delete_transaction_budget(self, transaction_id, delete_type):
-        with self.connection.cursor() as cursor:
-            if delete_type == "transaction":
-                cursor.execute("DELETE FROM transactions WHERE transaction_id=%s",
-                            (transaction_id))
-                return True
-            elif delete_type == "budget":
-                cursor.execute("DELETE FROM budgets WHERE budget_id=%s",
-                            (transaction_id))
-                cursor.execute("DELETE FROM transactions WHERE budget_id=%s",
-                            (transaction_id))
-                return True
-            else:
-                return False
-            self.connection.commit()
+    
 
